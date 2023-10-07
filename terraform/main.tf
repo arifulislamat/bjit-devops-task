@@ -37,7 +37,7 @@ terraform {
 
 # Configure the AWS Provider
 provider "aws" {
-  region = "ap-southeast-1"
+  region = "ap-south-1"
 }
 
 # Define the VPC
@@ -50,15 +50,19 @@ resource "aws_vpc" "bjit_vpc" {
   }
 }
 
+# Define the subnets in three availability zones
+variable "availability_zones" {
+  default = ["ap-south-1a", "ap-south-1b", "ap-south-1c"]
+}
 # Define the subnets
 resource "aws_subnet" "public_subnet" {
   count             = 3
   vpc_id            = aws_vpc.bjit_vpc.id
   cidr_block        = "10.0.${4 + count.index * 2}.0/24"
-  availability_zone = "us-east-1a"
+  availability_zone = element(var.availability_zones, count.index)
   map_public_ip_on_launch = true
   tags = {
-    Name = "bjit-subnet-public-ap-southeast-${count.index + 1}"
+    Name = "bjit-subnet-public-ap-south-${count.index + 1}"
   }
 }
 
@@ -66,16 +70,20 @@ resource "aws_subnet" "private_subnet" {
   count             = 3
   vpc_id            = aws_vpc.bjit_vpc.id
   cidr_block        = "10.0.${10 + count.index * 2}.0/24"
-  availability_zone = "us-east-1a"
+  availability_zone = element(var.availability_zones, count.index)
   tags = {
-    Name = "bjit-subnet-private-ap-southeast-${count.index + 1}"
+    Name = "bjit-subnet-private-ap-south-${count.index + 1}"
   }
 }
 
 # Create VPC endpoints for S3
 resource "aws_vpc_endpoint" "s3_endpoint" {
   vpc_id = aws_vpc.bjit_vpc.id
-  service_name = "com.amazonaws.us-east-1.s3"
+  service_name = "com.amazonaws.ap-south-1.s3"
+  route_table_ids = [for rt in aws_route_table.private_route_table : rt.id]  
+  tags = {
+    Name = "bjit-s3-endpoint" 
+  }
 }
 
 # Define security groups
@@ -103,7 +111,7 @@ resource "aws_security_group_rule" "rds_mysql" {
   from_port   = 3306
   to_port     = 3306
   protocol    = "tcp"
-  cidr_blocks = ["0.0.0.0/0"]
+  cidr_blocks = ["10.0.0.0/16"]
   security_group_id = aws_security_group.rds_sg.id
 }
 
@@ -117,7 +125,7 @@ resource "aws_security_group_rule" "redis_port" {
   from_port   = 6379
   to_port     = 6379
   protocol    = "tcp"
-  cidr_blocks = ["0.0.0.0/0"]
+  cidr_blocks = ["10.0.0.0/16"]
   security_group_id = aws_security_group.redis_sg.id
 }
 
@@ -131,7 +139,7 @@ resource "aws_security_group_rule" "py_backend_ports" {
   from_port   = 8080
   to_port     = 8080
   protocol    = "tcp"
-  cidr_blocks = ["0.0.0.0/0"]
+  cidr_blocks = ["10.0.0.0/16"]
   security_group_id = aws_security_group.py_backend_sg.id
 }
 
@@ -147,9 +155,12 @@ resource "aws_security_group_rule" "py_backend_ssh" {
 # Create an Internet Gateway
 resource "aws_internet_gateway" "bjit_igw" {
   vpc_id = aws_vpc.bjit_vpc.id
+   tags = {
+    Name = "bjit-igw"
+  }
 }
 
-# Create public and private route tables
+# Create a public route table
 resource "aws_route_table" "public_route_table" {
   vpc_id = aws_vpc.bjit_vpc.id
 
@@ -159,32 +170,33 @@ resource "aws_route_table" "public_route_table" {
   }
 
   tags = {
-    Name = "Public Route Table"
+    Name = "bjit-rtb-public"
   }
 }
 
+# Create private route tables for each availability zone
 resource "aws_route_table" "private_route_table" {
   count  = 3
   vpc_id = aws_vpc.bjit_vpc.id
 
   tags = {
-    Name = "Private Route Table ${count.index + 1}"
+    Name = "bjit-rtb-private-${element(var.availability_zones, count.index)}"
   }
 }
 
-# Associate subnets with route tables
+# Associate public subnet with the public route table
 resource "aws_route_table_association" "public_association" {
   count          = 3
-  subnet_id      = element(aws_subnet.public_subnet[*].id, count.index)
+  subnet_id      = aws_subnet.public_subnet[count.index].id
   route_table_id = aws_route_table.public_route_table.id
 }
 
+# Associate private subnet with their respective private route tables
 resource "aws_route_table_association" "private_association" {
   count          = 3
-  subnet_id      = element(aws_subnet.private_subnet[*].id, count.index)
-  route_table_id = element(aws_route_table.private_route_table[*].id, count.index)
+  subnet_id      = aws_subnet.private_subnet[count.index].id
+  route_table_id = element(aws_route_table.private_route_table, count.index).id
 }
-
 # Add outbound rules to security groups to allow all traffic
 resource "aws_security_group_rule" "alb_outbound" {
   type        = "egress"
