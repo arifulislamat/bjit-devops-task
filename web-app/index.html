@@ -82,10 +82,16 @@ Website: arifulislamat.com
       .file-item span {
         margin-right: 10px;
       }
+      .header {
+        margin-top: 1%;
+        margin-bottom: 3%;
+      }
     </style>
   </head>
   <body>
-    <h1>Web Application</h1>
+    <header class="header">
+      <h1>Web Application</h1>
+    </header>
     <div>
       <h2>Upload File</h2>
       <input
@@ -101,14 +107,14 @@ Website: arifulislamat.com
       <ul id="file-list"></ul>
     </div>
     <div id="status">
-      <h2>
+      <h3>
         MySQL Status:
         <span id="mysql-status" class="connecting">connecting</span>
-      </h2>
-      <h2>
+      </h3>
+      <h3>
         Redis Status:
         <span id="redis-status" class="connecting">connecting</span>
-      </h2>
+      </h3>
     </div>
     <div id="footer">
       <p>&copy; 2023 arifulislamat.com</p>
