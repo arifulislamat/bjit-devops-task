@@ -47,16 +47,59 @@ Website: arifulislamat.com
         bottom: 10px;
         width: 100%;
       }
+      #status {
+        position: absolute;
+        bottom: 10%;
+        width: 100%;
+      }
       .green {
         color: green;
       }
       .red {
         color: red;
       }
+
+      #file-list {
+        list-style: none;
+        padding: 0;
+      }
+
+      #file-container h2 {
+        text-align: center;
+      }
+      #file-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .file-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 300px;
+        margin-bottom: 10px;
+      }
+      .file-item span {
+        margin-right: 10px;
+      }
     </style>
   </head>
   <body>
     <h1>Web Application</h1>
+    <div>
+      <h2>Upload File</h2>
+      <input
+        type="file"
+        id="file-input"
+        accept=".txt, .pdf, .jpg, .jpeg, .png, .gif"
+      />
+      <button id="upload-button">Upload File</button>
+    </div>
+
+    <div id="file-container">
+      <h2>Stored Files</h2>
+      <ul id="file-list"></ul>
+    </div>
     <div id="status">
       <h2>
         MySQL Status:
@@ -95,7 +138,92 @@ Website: arifulislamat.com
         console.log("Redis Status:", redisStatusData.state);
       }
 
+      // Get Database Status
       getStatus();
+
+      // Function to handle file upload
+      async function uploadFile() {
+        const fileInput = document.getElementById("file-input");
+        const file = fileInput.files[0];
+
+        if (!file) {
+          alert("Please select a file.");
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await fetch(`${backendURL}/api/upload`, {
+          method: "POST",
+          body: formData,
+        });
+
+        if (response.ok) {
+          // Clear the file input after successful upload
+          fileInput.value = "";
+          // Refresh the list of stored files
+          await displayStoredFiles();
+        } else {
+          alert("Failed to upload file.");
+        }
+      }
+      // Function to delete a file
+      async function deleteFile(filename) {
+        const response = await fetch(`${backendURL}/api/delete/${filename}`, {
+          method: "DELETE",
+        });
+
+        if (response.ok) {
+          // Refresh the list of stored files after successful deletion
+          await displayStoredFiles();
+        } else {
+          alert(`Failed to delete file '${filename}'.`);
+        }
+      }
+      // Function to display stored files
+      async function displayStoredFiles() {
+        const fileList = document.getElementById("file-list");
+        fileList.innerHTML = "";
+
+        const response = await fetch(`${backendURL}/api/files`);
+        if (response.ok) {
+          const result = await response.json();
+          const files = result.files;
+
+          // Check if 'files' is an array before using forEach
+          if (Array.isArray(files)) {
+            files.forEach((filename) => {
+              const li = document.createElement("li");
+              const fileItem = document.createElement("div");
+              const fileName = document.createElement("span");
+              const deleteButton = document.createElement("button");
+
+              fileItem.classList.add("file-item");
+              fileName.textContent = filename;
+              deleteButton.textContent = "Delete";
+              deleteButton.addEventListener("click", () =>
+                deleteFile(filename)
+              );
+
+              fileItem.appendChild(fileName);
+              fileItem.appendChild(deleteButton);
+              li.appendChild(fileItem);
+              fileList.appendChild(li);
+            });
+          } else {
+            console.error("Files data is not an array:", files);
+          }
+        } else {
+          alert("Failed to fetch stored files.");
+        }
+      }
+      // Attach click event handler for the "Upload File" button
+      const uploadButton = document.getElementById("upload-button");
+      uploadButton.addEventListener("click", uploadFile);
+
+      // Display stored files on page load
+      displayStoredFiles();
     </script>
   </body>
 </html>
