@@ -27,13 +27,13 @@
 #
 
 # Create an empty log file
-sudo touch /var/log/api-server.log
+sudo touch /var/log/file-server.log
 
 # Set permissions to the log file
-sudo chown admin:admin /var/log/api-server.log
+sudo chown admin:admin /var/log/file-server.log
 
 # Define a log file path
-LOG_FILE="/var/log/api-server.log"
+LOG_FILE="/var/log/file-server.log"
 
 # Redirect all subsequent output (stdout and stderr) to the log file
 exec >> "$LOG_FILE" 
@@ -45,26 +45,29 @@ sudo apt-get update -y
 sudo apt-get install -y python3-pip python3-dev python3-venv git
 
 # Clone API server code from GitHub
-git clone https://github.com/arifulislamat/bjit-devops-task.git ~/api-server
+git clone https://github.com/arifulislamat/bjit-devops-task.git /home/admin/file-server
+
+# Set permission for file-server dir
+sudo chown admin:admin /home/admin/file-server
 
 # Create a virtual environment for API Server
-python3 -m venv ~/api-server/web-app/venv
+python3 -m venv /home/admin/file-server/web-app/venv
 
 # Activate the virtual environment
-source ~/api-server/web-app/venv/bin/activate
+source /home/admin/file-server/web-app/venv/bin/activate
 
 # Install Python packages within the virtual environment
-pip install Flask Flask-CORS pymysql redis requests
+pip install Flask Flask-CORS
 
 # Create a systemd service unit file 
-sudo tee /etc/systemd/system/api-server.service << EOF
+sudo tee /etc/systemd/system/file-server.service << EOF
 [Unit]
 Description=BJIT DevOps API Server
 
 [Service]
 User=admin
-WorkingDirectory=/home/admin/api-server/web-app
-ExecStart=/home/admin/api-server/web-app/venv/bin/python /home/admin/api-server/web-app/api-server.py
+WorkingDirectory=/home/admin/file-server/web-app
+ExecStart=/home/admin/file-server/web-app/venv/bin/python /home/admin/file-server/web-app/file-server.py
 Restart=always
 
 [Install]
@@ -75,8 +78,11 @@ EOF
 sudo systemctl daemon-reload
 
 # Start and enable the service to run on boot
-sudo systemctl start api-server
-sudo systemctl enable api-server
+sudo systemctl start file-server
+sudo systemctl enable file-server
 
 # Check the status of the service
-sudo systemctl status api-server
+sudo systemctl status file-server
+
+# Exit statement
+exit 0
