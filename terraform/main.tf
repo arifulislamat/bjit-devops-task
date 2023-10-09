@@ -47,6 +47,8 @@ resource "aws_vpc" "bjit_vpc" {
   enable_dns_hostnames = true
   tags = {
     Name = "bjit-vpc"
+    Project = "BJIT DevOps Task"
+    Author = "Ariful Islam"
   }
 }
 
@@ -63,6 +65,8 @@ resource "aws_subnet" "public_subnet" {
   map_public_ip_on_launch = true
   tags = {
     Name = "bjit-subnet-public-ap-south-${count.index + 1}"
+    Project = "BJIT DevOps Task"
+    Author = "Ariful Islam"
   }
 }
 
@@ -73,83 +77,111 @@ resource "aws_subnet" "private_subnet" {
   availability_zone = element(var.availability_zones, count.index)
   tags = {
     Name = "bjit-subnet-private-ap-south-${count.index + 1}"
+    Project = "BJIT DevOps Task"
+    Author = "Ariful Islam"
   }
 }
 
 # Create VPC endpoints for S3
-resource "aws_vpc_endpoint" "s3_endpoint" {
+resource "aws_vpc_endpoint" "bjit_s3_endpoint" {
   vpc_id = aws_vpc.bjit_vpc.id
   service_name = "com.amazonaws.ap-south-1.s3"
   route_table_ids = [for rt in aws_route_table.private_route_table : rt.id]  
   tags = {
-    Name = "bjit-s3-endpoint" 
+    Name = "bjit-s3-endpoint"
+    Project = "BJIT DevOps Task"
+    Author = "Ariful Islam" 
   }
 }
 
 # Define security groups
-resource "aws_security_group" "alb_sg" {
-  name_prefix = "py-backend-api-server-ALB-SG"
+resource "aws_security_group" "bjit_alb_sg" {
+  name = "bjit-api-server-ALB"
   description = "Security group for ALB"
+  tags = {
+    Name = "bjit-api-server-ALB"
+    Project = "BJIT DevOps Task"
+    Author = "Ariful Islam" 
+  }
 }
 
 resource "aws_security_group_rule" "alb_http_https" {
-  type        = "ingress"
-  from_port   = 80
-  to_port     = 443
-  protocol    = "tcp"
-  cidr_blocks = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.alb_sg.id
+  type             = "ingress"
+  from_port        = 80
+  to_port          = 443
+  protocol         = "tcp"
+  security_group_id = aws_security_group.bjit_alb_sg.id
+
+  cidr_blocks = [
+    "0.0.0.0/0",  
+    "::/0",      
+  ]
 }
 
-resource "aws_security_group" "rds_sg" {
-  name_prefix = "mariaDB-RDS-SG"
+resource "aws_security_group" "bjit_rds_sg" {
+  name = "bjit-mariaDB-RDS-SG"
   description = "Security group for RDS"
+  tags = {
+    Name = "bjit-mariaDB-RDS"
+    Project = "BJIT DevOps Task"
+    Author = "Ariful Islam" 
+  }
 }
 
-resource "aws_security_group_rule" "rds_mysql" {
+resource "aws_security_group_rule" "bjit_rds_sg" {
   type        = "ingress"
   from_port   = 3306
   to_port     = 3306
   protocol    = "tcp"
   cidr_blocks = ["10.0.0.0/16"]
-  security_group_id = aws_security_group.rds_sg.id
+  security_group_id = aws_security_group.bjit_rds_sg.id
 }
 
-resource "aws_security_group" "redis_sg" {
-  name_prefix = "redis-SG"
+resource "aws_security_group" "bjit_redis_sg" {
+  name = "bjit-redis-SG"
   description = "Security group for Redis"
+  tags = {
+    Name = "bjit-redis-EC"
+    Project = "BJIT DevOps Task"
+    Author = "Ariful Islam" 
+  }
 }
 
-resource "aws_security_group_rule" "redis_port" {
+resource "aws_security_group_rule" "bjit_redis_port" {
   type        = "ingress"
   from_port   = 6379
   to_port     = 6379
   protocol    = "tcp"
   cidr_blocks = ["10.0.0.0/16"]
-  security_group_id = aws_security_group.redis_sg.id
+  security_group_id = aws_security_group.bjit_redis_sg.id
 }
 
-resource "aws_security_group" "py_backend_sg" {
-  name_prefix = "py-backend-api-server-SG"
-  description = "Security group for Python Backend"
+resource "aws_security_group" "bjit_api_server_sg" {
+  name = "bjit-api-server"
+  description = "Security group for API Server"
+  tags = {
+    Name = "bjit-api-server"
+    Project = "BJIT DevOps Task"
+    Author = "Ariful Islam" 
+  }
 }
 
-resource "aws_security_group_rule" "py_backend_ports" {
+resource "aws_security_group_rule" "bjit_api_server_ports" {
   type        = "ingress"
   from_port   = 8080
   to_port     = 8080
   protocol    = "tcp"
   cidr_blocks = ["10.0.0.0/16"]
-  security_group_id = aws_security_group.py_backend_sg.id
+  security_group_id = aws_security_group.bjit_api_server_sg.id
 }
 
-resource "aws_security_group_rule" "py_backend_ssh" {
+resource "aws_security_group_rule" "bjit_api_server_ssh" {
   type        = "ingress"
   from_port   = 22
   to_port     = 22
   protocol    = "tcp"
   cidr_blocks = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.py_backend_sg.id
+  security_group_id = aws_security_group.bjit_api_server_sg.id
 }
 
 # Create an Internet Gateway
@@ -157,6 +189,8 @@ resource "aws_internet_gateway" "bjit_igw" {
   vpc_id = aws_vpc.bjit_vpc.id
    tags = {
     Name = "bjit-igw"
+    Project = "BJIT DevOps Task"
+    Author = "Ariful Islam" 
   }
 }
 
@@ -171,6 +205,8 @@ resource "aws_route_table" "public_route_table" {
 
   tags = {
     Name = "bjit-rtb-public"
+    Project = "BJIT DevOps Task"
+    Author = "Ariful Islam" 
   }
 }
 
@@ -181,6 +217,8 @@ resource "aws_route_table" "private_route_table" {
 
   tags = {
     Name = "bjit-rtb-private-${element(var.availability_zones, count.index)}"
+    Project = "BJIT DevOps Task"
+    Author = "Ariful Islam" 
   }
 }
 
@@ -198,38 +236,38 @@ resource "aws_route_table_association" "private_association" {
   route_table_id = element(aws_route_table.private_route_table, count.index).id
 }
 # Add outbound rules to security groups to allow all traffic
-resource "aws_security_group_rule" "alb_outbound" {
+resource "aws_security_group_rule" "bjit_alb_outbound" {
   type        = "egress"
   from_port   = 0
   to_port     = 0
   protocol    = "-1"
   cidr_blocks = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.alb_sg.id
+  security_group_id = aws_security_group.bjit_alb_sg.id
 }
 
-resource "aws_security_group_rule" "rds_outbound" {
+resource "aws_security_group_rule" "bjit_rds_outbound" {
   type        = "egress"
   from_port   = 0
   to_port     = 0
   protocol    = "-1"
   cidr_blocks = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.rds_sg.id
+  security_group_id = aws_security_group.bjit_rds_sg.id
 }
 
-resource "aws_security_group_rule" "redis_outbound" {
+resource "aws_security_group_rule" "bjit_redis_outbound" {
   type        = "egress"
   from_port   = 0
   to_port     = 0
   protocol    = "-1"
   cidr_blocks = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.redis_sg.id
+  security_group_id = aws_security_group.bjit_redis_sg.id
 }
 
-resource "aws_security_group_rule" "py_backend_outbound" {
+resource "aws_security_group_rule" "bjit_api_server_outbound" {
   type        = "egress"
   from_port   = 0
   to_port     = 0
   protocol    = "-1"
   cidr_blocks = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.py_backend_sg.id
+  security_group_id = aws_security_group.bjit_api_server_sg.id
 }
