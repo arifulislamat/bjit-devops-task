@@ -96,8 +96,9 @@ resource "aws_vpc_endpoint" "bjit_s3_endpoint" {
 
 # Define security groups
 resource "aws_security_group" "bjit_alb_sg" {
-  name = "bjit-api-server-ALB"
+  name = "bjit-api-server-ALB-SG"
   description = "Security group for ALB"
+  vpc_id      = aws_vpc.bjit_vpc.id
   tags = {
     Name = "bjit-api-server-ALB"
     Project = "BJIT DevOps Task"
@@ -105,7 +106,7 @@ resource "aws_security_group" "bjit_alb_sg" {
   }
 }
 
-resource "aws_security_group_rule" "alb_http_https" {
+resource "aws_security_group_rule" "bjit_alb_http_https" {
   type             = "ingress"
   from_port        = 80
   to_port          = 443
@@ -116,7 +117,8 @@ resource "aws_security_group_rule" "alb_http_https" {
 
 resource "aws_security_group" "bjit_rds_sg" {
   name = "bjit-mariaDB-RDS-SG"
-  description = "Security group for RDS"
+  description = "Security group for MariaDB RDS"
+  vpc_id      = aws_vpc.bjit_vpc.id
   tags = {
     Name = "bjit-mariaDB-RDS"
     Project = "BJIT DevOps Task"
@@ -124,7 +126,7 @@ resource "aws_security_group" "bjit_rds_sg" {
   }
 }
 
-resource "aws_security_group_rule" "bjit_rds_sg" {
+resource "aws_security_group_rule" "bjit_rds_port" {
   type        = "ingress"
   from_port   = 3306
   to_port     = 3306
@@ -136,6 +138,7 @@ resource "aws_security_group_rule" "bjit_rds_sg" {
 resource "aws_security_group" "bjit_redis_sg" {
   name = "bjit-redis-SG"
   description = "Security group for Redis"
+  vpc_id      = aws_vpc.bjit_vpc.id
   tags = {
     Name = "bjit-redis-EC"
     Project = "BJIT DevOps Task"
@@ -153,8 +156,9 @@ resource "aws_security_group_rule" "bjit_redis_port" {
 }
 
 resource "aws_security_group" "bjit_api_server_sg" {
-  name = "bjit-api-server"
+  name = "bjit-api-server-SG"
   description = "Security group for API Server"
+  vpc_id      = aws_vpc.bjit_vpc.id
   tags = {
     Name = "bjit-api-server"
     Project = "BJIT DevOps Task"
@@ -181,8 +185,9 @@ resource "aws_security_group_rule" "bjit_api_server_ssh" {
 }
 
 resource "aws_security_group" "bjit_file_server_sg" {
-  name = "bjit-file-server"
+  name = "bjit-file-server-SG"
   description = "Security group for File Server"
+  vpc_id      = aws_vpc.bjit_vpc.id
   tags = {
     Name = "bjit-file-server"
     Project = "BJIT DevOps Task"
@@ -206,6 +211,25 @@ resource "aws_security_group_rule" "bjit_file_server_ssh" {
   protocol    = "tcp"
   cidr_blocks = ["10.0.0.0/16"]
   security_group_id = aws_security_group.bjit_file_server_sg.id
+}
+
+resource "aws_security_group" "bjit_public_ssh_sg" {
+  name = "bjit-public-ssh-SG"
+  description = "Security group for Public SSH Access"
+  vpc_id      = aws_vpc.bjit_vpc.id
+  tags = {
+    Name = "bjit-public-ssh"
+    Project = "BJIT DevOps Task"
+    Author = "Ariful Islam" 
+  }
+}
+resource "aws_security_group_rule" "bjit_public_ssh" {
+  type        = "ingress"
+  from_port   = 22
+  to_port     = 22
+  protocol    = "tcp"
+  cidr_blocks = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.bjit_public_ssh_sg.id
 }
 
 # Create an Internet Gateway
@@ -302,4 +326,12 @@ resource "aws_security_group_rule" "bjit_file_server_outbound" {
   protocol    = "-1"
   cidr_blocks = ["0.0.0.0/0"]
   security_group_id = aws_security_group.bjit_file_server_sg.id
+}
+resource "aws_security_group_rule" "bjit_public_ssh_outbound" {
+  type        = "egress"
+  from_port   = 0
+  to_port     = 0
+  protocol    = "-1"
+  cidr_blocks = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.bjit_public_ssh_sg.id
 }
