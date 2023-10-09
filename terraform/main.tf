@@ -111,11 +111,7 @@ resource "aws_security_group_rule" "alb_http_https" {
   to_port          = 443
   protocol         = "tcp"
   security_group_id = aws_security_group.bjit_alb_sg.id
-
-  cidr_blocks = [
-    "0.0.0.0/0",  
-    "::/0",      
-  ]
+  cidr_blocks = ["0.0.0.0/0"]
 }
 
 resource "aws_security_group" "bjit_rds_sg" {
@@ -180,8 +176,36 @@ resource "aws_security_group_rule" "bjit_api_server_ssh" {
   from_port   = 22
   to_port     = 22
   protocol    = "tcp"
-  cidr_blocks = ["0.0.0.0/0"]
+  cidr_blocks = ["10.0.0.0/16"]
   security_group_id = aws_security_group.bjit_api_server_sg.id
+}
+
+resource "aws_security_group" "bjit_file_server_sg" {
+  name = "bjit-file-server"
+  description = "Security group for File Server"
+  tags = {
+    Name = "bjit-file-server"
+    Project = "BJIT DevOps Task"
+    Author = "Ariful Islam" 
+  }
+}
+
+resource "aws_security_group_rule" "bjit_file_server_ports" {
+  type        = "ingress"
+  from_port   = 8081
+  to_port     = 8081
+  protocol    = "tcp"
+  cidr_blocks = ["10.0.0.0/16"]
+  security_group_id = aws_security_group.bjit_file_server_sg.id
+}
+
+resource "aws_security_group_rule" "bjit_file_server_ssh" {
+  type        = "ingress"
+  from_port   = 22
+  to_port     = 22
+  protocol    = "tcp"
+  cidr_blocks = ["10.0.0.0/16"]
+  security_group_id = aws_security_group.bjit_file_server_sg.id
 }
 
 # Create an Internet Gateway
@@ -270,4 +294,12 @@ resource "aws_security_group_rule" "bjit_api_server_outbound" {
   protocol    = "-1"
   cidr_blocks = ["0.0.0.0/0"]
   security_group_id = aws_security_group.bjit_api_server_sg.id
+}
+resource "aws_security_group_rule" "bjit_file_server_outbound" {
+  type        = "egress"
+  from_port   = 0
+  to_port     = 0
+  protocol    = "-1"
+  cidr_blocks = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.bjit_file_server_sg.id
 }
