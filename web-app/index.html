@@ -195,7 +195,7 @@ Website: arifulislamat.com
           alert(`Failed to delete file '${filename}'.`);
         }
       }
-      // Function to display stored files
+      // Function to display stored files with clickable links
       async function displayStoredFiles() {
         const fileList = document.getElementById("file-list");
         fileList.innerHTML = "";
@@ -210,17 +210,19 @@ Website: arifulislamat.com
             files.forEach((filename) => {
               const li = document.createElement("li");
               const fileItem = document.createElement("div");
-              const fileName = document.createElement("span");
+              const fileLink = document.createElement("a");
               const deleteButton = document.createElement("button");
 
               fileItem.classList.add("file-item");
-              fileName.textContent = filename;
+              fileLink.textContent = filename;
+              fileLink.href = `${apiserverURL}/api/download/${filename}`;
+              fileLink.target = "_blank";
               deleteButton.textContent = "Delete";
               deleteButton.addEventListener("click", () =>
                 deleteFile(filename)
               );
 
-              fileItem.appendChild(fileName);
+              fileItem.appendChild(fileLink);
               fileItem.appendChild(deleteButton);
               li.appendChild(fileItem);
               fileList.appendChild(li);

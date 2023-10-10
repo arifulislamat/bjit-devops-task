@@ -24,7 +24,7 @@ Name: Ariful Islam
 Email: arifulislamat@gmail.com
 Website: arifulislamat.com
 """
-from flask import Flask, jsonify, request, make_response
+from flask import Flask, jsonify, request, make_response,  Response
 from flask_cors import CORS
 import pymysql
 import redis
@@ -33,7 +33,6 @@ import requests
 
 app = Flask(__name__)
 CORS(app)
-
 
 # MySQL connection
 def check_mysql_connection():
@@ -121,7 +120,7 @@ def download_file(filename):
     try:
         response = requests.get(f"{file_server_url}/api/download/{filename}")
         if response.status_code == 200:
-            return make_response(response.content), 200
+            return Response(response.iter_content(), mimetype='application/octet-stream')
         elif response.status_code == 404:
             return jsonify(error=f"File '{filename}' not found on the file server"), 404
         else:
